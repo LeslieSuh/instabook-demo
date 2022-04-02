@@ -12,7 +12,7 @@ def get_db_connection():
     connection = connect(
         host=DB_HOST,
         user=DB_USER,
-        password=DB_PASS,
+        password='dk2268441',
         database=DB_NAME)
     return connection
 

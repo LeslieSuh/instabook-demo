@@ -8,8 +8,11 @@ def add_user(username, display_name, pin):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            pass
+            cursor.execute("""INSERT INTO users
+                (username, display_name, pin)
+                    VALUES
+                    (%s, %s, %s);""", (username, display_name, pin))
+            connection.commit() #commit or rollback either is fine
 
 
 def username_available(username):
@@ -19,9 +22,14 @@ def username_available(username):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            return False if username in ['somebody', 'somebodyelse'] else True
-
+            cursor.execute("""SELECT *
+                        FROM users u
+                        WHERE u.username = %s;""", (username,)) # using tuple - if we're just using one, we need to add , in the end
+            results = cursor.fetchall() # grab all result from the query
+            if len(results) > 0:
+                return False
+            else:
+                return True
 
 def get_user_with_credentials(username, pin):
     """
@@ -49,11 +57,12 @@ def search_users(name):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            users = [(1, 'somebody', 'Some Body', '1234'),
-                     (2, 'somebodyelse', 'Somebody Else', '2345')]
-            return [user[:3] for user in users if name in user[1]]
-
+            cursor.execute("""SELECT u.id, u.username, u.display_name
+                            FROM users u
+                            WHERE u.username LIKE CONCAT('%', %s, '%')
+                            OR u.display_name LIKE CONCAT('%', %s, '%');""", (name, name))
+            results = cursor.fetchall()
+            return results
 
 def get_user_details(user_id):
     """
@@ -63,8 +72,9 @@ def get_user_details(user_id):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            if user_id == 1:
-                return 1, 'somebody', 'Some Body'
-            else:
-                return user_id, 'somebodyelse', 'Somebody Else'
+           cursor.execute("""SELECT u.id, u.username, u.display_name
+                            FROM users u
+                            WHERE u.id = %s;""", (user_id,))
+           results = cursor.fetchall()
+           if len(results) > 0:
+               return results[0]

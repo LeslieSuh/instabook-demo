@@ -9,38 +9,45 @@ def get_book_rating_for_user(book_id, user_id):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            if book_id == 1:
-                return [(5, 'Banging')]
-            else:
-                return []
+            cursor.execute("""SELECT *
+                              FROM book_ratings r
+                              WHERE r.book_id = %s
+                              AND r.user_id = %s;""", (book_id, user_id))
+            results = cursor.fetchall()
+            return results
 
 
 def get_recent_book_ratings(book_id):
     """
     Get 10 most recent ratings for a book
     Required columns: u.id, u.username, u.display_name, r.score, r.review
-    Required tables: books b, book_ratings r
+    Required tables: users u, book_ratings r
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            return [(1, 'somebody', 'Some Body', 5, 'Banging'),
-                    (2, 'somebodyelse', 'Somebody Else', 4, 'It was good I guess')]
-
+            cursor.execute("""SELECT u.id, u.username, u.display_name, r.score, r.review
+                              FROM book_ratings r
+                              JOIN users u
+                              ON r.user_id = u.id
+                              WHERE r.book_id = %s;""", (book_id,))
+            results = cursor.fetchall()
+            return results
 
 def get_recent_user_ratings(user_id):
     """
-    Get 10 most recent ratings from user
+    Get 10 most recent ratings for a user
     Required columns: b.id, b.title, b.author, r.score, r.review
     Required tables: books b, book_ratings r
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            return [(1, 'Some Book', 'Some Author', 5, 'Banging'),
-                    (2, 'Some Other Book', 'Some Other Author', 4, 'It was good I guess')]
-
+            cursor.execute("""SELECT b.id, b.title, b.author, r.score, r.review
+                              FROM book_ratings r
+                              JOIN books b
+                              ON r.book_id = b.id
+                              WHERE r.user_id = %s;""", (user_id,))
+            results = cursor.fetchall()
+            return results
 
 def get_recent_follower_ratings(user_id):
     """
@@ -50,10 +57,17 @@ def get_recent_follower_ratings(user_id):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            return [(1, 'somebody', 'Some Body', 1, 'Some Book', 'Some Author', 5, 'Banging'),
-                    (2, 'somebodyelse', 'Somebody Else', 2, 'Some Other Book', 'Some Other Author', 4, 'It was good I guess')]
-
+            cursor.execute("""SELECT u.id, u.username, u.display_name, b.id, b.title, b.author, r.score, r.review
+                              FROM book_ratings r
+                              JOIN books b
+                              ON r.book_id = b.id
+                              JOIN users u
+                              ON r.user_id = u.id
+                              JOIN followers f
+                              ON u.id = f.followed_user_id
+                              WHERE f.following_user_id = %s;""", (user_id,))
+            results = cursor.fetchall()
+            return results
 
 def add_rating(user_id, book_id, score, review):
     """
@@ -62,8 +76,11 @@ def add_rating(user_id, book_id, score, review):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            pass
+            cursor.execute("""INSERT INTO book_ratings
+                              (user_id, book_id, score, review)
+                              VALUES
+                              (%s, %s, %s, %s);""", (user_id, book_id, score, review))
+            connection.commit()
 
 
 def remove_rating(user_id, book_id):
@@ -73,5 +90,7 @@ def remove_rating(user_id, book_id):
     """
     with get_db_connection() as connection:
         with connection.cursor() as cursor:
-            # Temporary code
-            pass
+            cursor.execute("""DELETE FROM book_ratings
+                              WHERE user_id = %s
+                              AND book_id = %s;""", (user_id, book_id))
+            connection.commit()
